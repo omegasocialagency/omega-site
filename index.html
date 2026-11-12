@@ -456,6 +456,49 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     </div>
   </div>
 </div>
+
+<div id="view-details" hidden>
+  <section class="block">
+    <div class="wrap" style="max-width:760px">
+      <div class="section-head" style="margin-bottom:28px">
+        <p class="eyebrow">Booking details</p>
+        <h2>tell us about your day</h2>
+        <p>Once your date is confirmed, fill this out so your creator can plan your coverage. Share what you know. Anything you are unsure of can be left blank.</p>
+      </div>
+      <form class="req" id="detForm" novalidate>
+        <div class="row2">
+          <div class="field"><label for="d-name">Full name *</label><input type="text" id="d-name" autocomplete="name"></div>
+          <div class="field"><label for="d-email">Email address *</label><input type="text" id="d-email" autocomplete="email" inputmode="email"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="d-partner">Partner’s name *</label><input type="text" id="d-partner"></div>
+          <div class="field"><label for="d-date">Wedding date *</label><input type="text" id="d-date" placeholder="Month, day, year"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="d-city">Wedding city and state *</label><input type="text" id="d-city"></div>
+          <div class="field"><label for="d-venue">Venue name / location address *</label><input type="text" id="d-venue"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="d-place">Indoor / outdoor / both</label><select id="d-place"><option value="">Choose one</option><option>Indoor</option><option>Outdoor</option><option>Both</option></select></div>
+          <div class="field"><label for="d-start">Start time (if known)</label><input type="text" id="d-start"></div>
+        </div>
+        <div class="field"><label for="d-cover">Desired coverage time *</label><input type="text" id="d-cover" placeholder="For example, 2 hours"></div>
+        <div class="row2">
+          <div class="field"><label for="d-photo">Photographer name and IG (if known)</label><input type="text" id="d-photo"></div>
+          <div class="field"><label for="d-video">Videographer name and IG (if applicable)</label><input type="text" id="d-video"></div>
+        </div>
+        <div class="field"><label for="d-planner">Wedding planner name and IG (if applicable)</label><input type="text" id="d-planner"></div>
+        <div class="field"><label for="d-notes">Is there anything else you would like us to know?</label><textarea id="d-notes"></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="d-hp">Leave this empty</label><input type="text" id="d-hp" tabindex="-1" autocomplete="off"></div>
+        <p class="err" id="detErr" role="alert" hidden></p>
+        <button class="btn" id="detSend" type="submit" style="justify-self:start">Send booking details</button>
+      </form>
+      <div class="result" id="detDone" hidden role="status">
+        <p><b>Thank you, your details are in.</b> We will review them and follow up by email.</p>
+      </div>
+    </div>
+  </section>
+</div>
 </main>
 
 <footer class="site">
@@ -467,15 +510,64 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
 
 <script>
 (function () {
+  var URL_ = 'https://formspree.io/f/myewyneo';
+  var f = document.getElementById('detForm');
+  var err = document.getElementById('detErr');
+  var btn = document.getElementById('detSend');
+  function v(id) { return document.getElementById(id).value.trim(); }
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (v('d-hp')) return;
+    var req = ['d-name', 'd-partner', 'd-date', 'd-city', 'd-venue', 'd-cover'];
+    var missing = req.some(function (id) { return !v(id); });
+    if (missing || v('d-email').indexOf('@') < 1) {
+      err.textContent = 'Please fill in your name, a valid email, partner’s name, date, city and state, venue and coverage time.';
+      err.hidden = false;
+      return;
+    }
+    err.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    fetch(URL_, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        form: 'Booking details',
+        name: v('d-name'), email: v('d-email'), partner: v('d-partner'),
+        wedding_date: v('d-date'), city_state: v('d-city'), venue: v('d-venue'),
+        indoor_outdoor: v('d-place') || 'not provided', start_time: v('d-start') || 'not provided',
+        coverage_time: v('d-cover'), photographer: v('d-photo') || 'none',
+        videographer: v('d-video') || 'none', planner: v('d-planner') || 'none',
+        message: v('d-notes') || 'none',
+        _subject: 'Booking details: ' + v('d-name') + ' (' + v('d-date') + ')'
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('fail');
+      f.reset(); f.hidden = true;
+      document.getElementById('detDone').hidden = false;
+    }).catch(function () {
+      err.textContent = 'Your details did not send. Please try again, or email us at Omegasocialagency@gmail.com.';
+      err.hidden = false;
+    }).then(function () { btn.disabled = false; btn.textContent = 'Send booking details'; });
+  });
+})();
+</script>
+
+<script>
+(function () {
   var home = document.getElementById('view-home');
   var founders = document.getElementById('view-founders');
+  var details = document.getElementById('view-details');
   var navF = document.getElementById('nav-founders');
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function route() {
     var isF = location.hash === '#founders';
-    home.hidden = isF;
+    var isD = location.hash === '#booking-details';
+    home.hidden = isF || isD;
     founders.hidden = !isF;
+    details.hidden = !isD;
+    if (isD) window.scrollTo(0, 0);
     navF.classList.toggle('on', isF);
   }
   window.addEventListener('hashchange', route);
@@ -501,7 +593,8 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     });
   });
   // ---- Booking calendar. Omega's booked dates live here and are kept up to date by Claude on request. ----
-  var BOOKED = [];
+  var BOOKED = {};
+  var CREATORS = 2;
   var CAL_UPDATED = 'November 11, 2026';
 
   var calEl = document.getElementById('cal');
@@ -539,13 +632,14 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       var dt = new Date(view.getFullYear(), view.getMonth(), d);
       var k = keyOf(dt);
       var past = dt < today;
-      var taken = BOOKED.indexOf(k) > -1;
+      var left = CREATORS - (BOOKED[k] || 0);
+      var taken = left <= 0;
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'cal-day' + (taken ? ' taken' : '') + (past ? ' past' : '') + (k === selected ? ' pick' : '');
       b.textContent = d;
       b.disabled = past || taken;
-      b.setAttribute('aria-label', longDate(dt) + (taken ? ', booked' : past ? ', past' : ', open'));
+      b.setAttribute('aria-label', longDate(dt) + (taken ? ', booked' : past ? ', past' : left < CREATORS ? ', open, one spot left' : ', open'));
       if (k === selected) b.setAttribute('aria-pressed', 'true');
       (function (kk, date) {
         b.addEventListener('click', function () {
@@ -571,7 +665,9 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
 
   fetch('booked.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
     if (!j) return;
-    if (Array.isArray(j.booked)) BOOKED = j.booked;
+    if (j.creators) CREATORS = j.creators;
+    if (Array.isArray(j.booked)) { j.booked.forEach(function (k) { BOOKED[k] = CREATORS; }); }
+    else if (j.booked) BOOKED = j.booked;
     if (j.updated) {
       CAL_UPDATED = j.updated;
       document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Booked dates are removed by Omega.';
