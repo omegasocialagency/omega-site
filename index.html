@@ -465,7 +465,12 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         <h2>tell us about your day</h2>
         <p>Once your date is confirmed, fill this out so your creator can plan your coverage. Share what you know. Anything you are unsure of can be left blank.</p>
       </div>
-      <form class="req" id="detForm" novalidate>
+      <form class="req" id="detLock" novalidate>
+        <div class="field"><label for="d-pass">Passcode</label><input type="text" id="d-pass" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <p class="err" id="lockErr" role="alert" hidden></p>
+        <button class="btn" id="lockBtn" type="submit" style="justify-self:start">Unlock</button>
+      </form>
+      <form class="req" id="detForm" hidden novalidate>
         <div class="row2">
           <div class="field"><label for="d-name">Full name *</label><input type="text" id="d-name" autocomplete="name"></div>
           <div class="field"><label for="d-email">Email address *</label><input type="text" id="d-email" autocomplete="email" inputmode="email"></div>
@@ -515,6 +520,25 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   var err = document.getElementById('detErr');
   var btn = document.getElementById('detSend');
   function v(id) { return document.getElementById(id).value.trim(); }
+  var HASH = '1b131b38cf46d749b857606d80a38174d3339b2a8ed7b7dd7fefe9a0eaa28d56';
+  var lock = document.getElementById('detLock');
+  function sha(str) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (b) {
+      return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    });
+  }
+  function unlock() { lock.hidden = true; f.hidden = false; }
+  try { if (sessionStorage.getItem('omegaDetails') === HASH) unlock(); } catch (x) {}
+  lock.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var le = document.getElementById('lockErr');
+    sha(document.getElementById('d-pass').value.trim().toLowerCase()).then(function (h) {
+      if (h === HASH) {
+        try { sessionStorage.setItem('omegaDetails', HASH); } catch (x) {}
+        le.hidden = true; unlock();
+      } else { le.textContent = 'That passcode is not right. Check the message we sent you.'; le.hidden = false; }
+    }).catch(function () { le.textContent = 'Could not check the passcode in this browser. Email us at Omegasocialagency@gmail.com.'; le.hidden = false; });
+  });
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (v('d-hp')) return;
