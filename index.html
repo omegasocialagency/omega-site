@@ -210,7 +210,6 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     <nav class="main" aria-label="Main">
       <a href="#home" data-go="services">Packages</a>
       <a href="#home" data-go="creators">Creators</a>
-      <a href="#founders" data-go="founders" id="nav-founders">Founders</a>
       <a href="#home" data-go="contact">Contact</a>
       <a href="#home" data-go="booking" class="cta">Book</a>
     </nav>
@@ -298,7 +297,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Creators</p>
-        <h2>meet who’s filming</h2>
+        <h2>meet who’s creating</h2>
         <p>You book people, not a faceless company. Omega was founded by Taylor and Sydney.</p>
       </div>
       <div class="people">
@@ -607,7 +606,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     founders.hidden = !isF;
     details.hidden = !isD;
     if (isD) window.scrollTo(0, 0);
-    navF.classList.toggle('on', isF);
+    if (navF) navF.classList.toggle('on', isF);
   }
   window.addEventListener('hashchange', route);
   route();
