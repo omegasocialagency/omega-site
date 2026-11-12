@@ -1,15 +1,35 @@
 {
   "updated": "November 11, 2026",
-  "creators": ["Sydney", "Taylor"],
+  "creators": [
+    "Sydney",
+    "Taylor"
+  ],
   "openThrough": "2027-12-31",
   "note": "We are not taking bookings or inquiries for 2028 yet. Check back soon.",
   "booked": {
-    "2026-12-06": ["Taylor"],
-    "2027-02-27": ["Taylor"],
-    "2027-03-13": ["Taylor"],
-    "2027-05-08": ["Taylor"],
-    "2027-06-26": ["Sydney", "Taylor"],
-    "2027-08-07": ["Sydney", "Taylor"],
-    "2028-03-25": ["Taylor"]
+    "2026-12-06": [
+      "Taylor"
+    ],
+    "2027-02-27": [
+      "Taylor"
+    ],
+    "2027-03-13": [
+      "Taylor"
+    ],
+    "2027-05-08": [
+      "Taylor"
+    ],
+    "2027-06-26": [
+      "Sydney",
+      "Taylor"
+    ],
+    "2027-08-07": [
+      "Sydney",
+      "Taylor"
+    ],
+    "2028-03-25": [
+      "Sydney",
+      "Taylor"
+    ]
   }
 }
