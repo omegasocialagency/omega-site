@@ -343,6 +343,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         <div class="cal-grid" id="cal" role="group" aria-label="Open and booked dates"></div>
         <div class="legend"><span><i class="sw"></i>Open</span><span><i class="sw taken"></i>Booked</span><span><i class="sw pick"></i>Your pick</span></div>
         <p class="placeholder" id="calUpdated"></p>
+        <p class="muted" id="calNote"></p>
 
         <form class="req" id="reqForm" hidden novalidate>
           <span class="eyebrow">Event date</span>
@@ -692,6 +693,13 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (j.creators) CREATORS = j.creators;
     if (Array.isArray(j.booked)) { j.booked.forEach(function (k) { BOOKED[k] = CREATORS; }); }
     else if (j.booked) BOOKED = j.booked;
+    if (j.openThrough) {
+      var pp = j.openThrough.split('-');
+      var lim = new Date(+pp[0], +pp[1] - 1, 1);
+      if (lim < maxMonth) maxMonth = lim;
+      if (view > maxMonth) view = maxMonth;
+    }
+    if (j.note) { document.getElementById('calNote').textContent = j.note; }
     if (j.updated) {
       CAL_UPDATED = j.updated;
       document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Booked dates are removed by Omega.';
