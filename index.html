@@ -149,6 +149,7 @@ section.block + section.block { border-top: 1px solid var(--line); }
 .cal-day.pick { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .cal-day.taken { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px); color: var(--muted); text-decoration: line-through; cursor: not-allowed; }
 .cal-day.past { opacity: 0.3; cursor: default; }
+.cal-day.limited { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px); color: var(--muted); }
 .legend { display: flex; gap: 8px 20px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); background: var(--bg); }
@@ -670,7 +671,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   function keyOf(dt) { return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); }
   function longDate(dt) { return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
 
-  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Dates close once every creator is booked and the retainer is received.';
+  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Open dates are not held until we confirm by reply. A date that shows unavailable may still have room, so send an inquiry and we will check. Dates close once every creator is booked and the retainer is received.';
 
   function render() {
     monthLabel.textContent = view.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -685,27 +686,28 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       var k = keyOf(dt);
       var past = dt < today;
       var left = avail(k);
-      var taken = left < need();
+      var taken = left < 1;
+      var limited = !taken && cnt(k) > 0;
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'cal-day' + (taken ? ' taken' : '') + (past ? ' past' : '') + (k === selected ? ' pick' : '');
+      b.className = 'cal-day' + (taken ? ' taken' : '') + (limited ? ' limited' : '') + (past ? ' past' : '') + (k === selected ? ' pick' : '');
       b.textContent = d;
       b.disabled = past || taken;
-      b.setAttribute('aria-label', longDate(dt) + (taken ? ', unavailable' : past ? ', past' : ', open'));
+      b.setAttribute('aria-label', longDate(dt) + (taken ? ', unavailable' : past ? ', past' : limited ? ', shows unavailable, send an inquiry to check' : ', open'));
       if (k === selected) b.setAttribute('aria-pressed', 'true');
-      (function (kk, date) {
+      (function (kk, date, lim) {
         b.addEventListener('click', function () {
           selected = kk;
           selectedDate = date;
           document.getElementById('pickedTitle').textContent = longDate(date);
-          var an = document.getElementById('availNote'); var at = availText(kk); an.textContent = at; an.hidden = !at; buildCreators(kk);
+          var an = document.getElementById('availNote'); var at = lim ? 'This date shows as unavailable, but we may still have a creator open. Send an inquiry and we will reply to confirm.' : ''; an.textContent = at; an.hidden = !at; buildCreators(kk);
           reqForm.hidden = false;
           reqResult.hidden = true;
           document.getElementById('reqDone').hidden = true;
           reqErr.hidden = true;
           render();
         });
-      })(k, dt);
+      })(k, dt, limited);
       calEl.appendChild(b);
     }
   }
@@ -713,7 +715,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     var sel = document.getElementById('r-creator');
     sel.textContent = '';
     var o = document.createElement('option'); o.value = ''; o.textContent = 'No preference, match me with the best fit'; sel.appendChild(o);
-    if (NAMES.length) freeNames(k).forEach(function (n) { var x = document.createElement('option'); x.value = n; x.textContent = n; sel.appendChild(x); });
+    if (NAMES.length) NAMES.forEach(function (n) { var x = document.createElement('option'); x.value = n; x.textContent = n; sel.appendChild(x); });
     document.getElementById('creatorNote').textContent = (PKG === 'heirloom' ? 'The Heirloom includes two creators on your day. ' : '') + 'Choosing a creator is a request, not a guarantee. We assign creators based on availability and fit.';
     var pe = document.getElementById('pkgEcho');
     pe.textContent = PKG ? 'Package: ' + PKG_LABELS[PKG] + (PKG === 'heirloom' ? ', two creators included' : '') : '';
@@ -722,9 +724,9 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   document.getElementById('pkg').addEventListener('change', function () {
     PKG = this.value;
     var pn = document.getElementById('pkgNote');
-    pn.textContent = PKG === 'heirloom' ? 'The Heirloom includes two creators on your day, so only dates with two creators available can be requested.' : '';
+    pn.textContent = PKG === 'heirloom' ? 'The Heirloom includes two creators on your day. We will confirm availability by reply.' : '';
     pn.hidden = !pn.textContent;
-    if (selected && avail(selected) < need()) { selected = null; selectedDate = null; reqForm.hidden = true; }
+    if (selected && avail(selected) < 1) { selected = null; selectedDate = null; reqForm.hidden = true; }
     render();
     if (selected) buildCreators(selected);
   });
@@ -751,7 +753,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (j.note) { document.getElementById('calNote').textContent = j.note; }
     if (j.updated) {
       CAL_UPDATED = j.updated;
-      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Dates close once every creator is booked and the retainer is received.';
+      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Open dates are not held until we confirm by reply. A date that shows unavailable may still have room, so send an inquiry and we will check. Dates close once every creator is booked and the retainer is received.';
     }
     render();
   }).catch(function () {});
