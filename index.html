@@ -149,12 +149,14 @@ section.block + section.block { border-top: 1px solid var(--line); }
 .cal-day.pick { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .cal-day.taken { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px); color: var(--muted); text-decoration: line-through; cursor: not-allowed; }
 .cal-day.past { opacity: 0.3; cursor: default; }
-.cal-day.limited { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px); color: var(--muted); }
+.cal-day.limited { border: 1px dashed var(--accent); color: var(--accent); }
+.cal-day.limited.pick { border-style: solid; color: var(--accent-fg); }
 .legend { display: flex; gap: 8px 20px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); background: var(--bg); }
 .sw.taken { background: repeating-linear-gradient(135deg, transparent 0 3px, var(--line) 3px 4px); }
 .sw.pick { background: var(--accent); border-color: var(--accent); }
+.sw.limited { border: 1px dashed var(--accent); }
 form.req { display: grid; gap: 16px; padding-top: 20px; border-top: 1px solid var(--line); }
 form.req h3 { font-size: 32px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -327,7 +329,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           <p>Check the calendar, choose an open day and send us your request. Dates fill up, so reach out as soon as you have one.</p>
         </div>
         <ol class="steps">
-          <li><div><b>Pick an open date</b><span>Unavailable days are crossed out and cannot be chosen.</span></div></li>
+          <li><div><b>Pick an open date</b><span>Open and limited days can be requested. Booked days are crossed out and locked.</span></div></li>
           <li><div><b>Tell us about your day</b><span>Your name, email, venue and the service you want.</span></div></li>
           <li><div><b>Send us your request</b><span>Your request goes straight to us. You can also message us on Instagram.</span></div></li>
           <li><div><b>We confirm your date</b><span>We reply to lock in your date. After your wedding or event, you get raw content within 24 hours and edited content within 72.</span></div></li>
@@ -344,7 +346,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         </div>
         <div class="cal-dow" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
         <div class="cal-grid" id="cal" role="group" aria-label="Open and booked dates"></div>
-        <div class="legend"><span><i class="sw"></i>Open</span><span><i class="sw taken"></i>Unavailable</span><span><i class="sw pick"></i>Your pick</span></div>
+        <div class="legend"><span><i class="sw"></i>Open</span><span><i class="sw limited"></i>Limited: send an inquiry</span><span><i class="sw taken"></i>Booked</span><span><i class="sw pick"></i>Your pick</span></div>
         <p class="placeholder" id="calUpdated"></p>
         <p class="muted" id="calNote"></p>
 
@@ -671,7 +673,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   function keyOf(dt) { return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); }
   function longDate(dt) { return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
 
-  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Open dates are not held until we confirm by reply. A date that shows unavailable may still have room, so send an inquiry and we will check. Dates close once every creator is booked and the retainer is received.';
+  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. No date is held until we confirm by reply. Limited dates may still have room, so send an inquiry and we will check. A date is booked once the retainer is received.';
 
   function render() {
     monthLabel.textContent = view.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -693,14 +695,14 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       b.className = 'cal-day' + (taken ? ' taken' : '') + (limited ? ' limited' : '') + (past ? ' past' : '') + (k === selected ? ' pick' : '');
       b.textContent = d;
       b.disabled = past || taken;
-      b.setAttribute('aria-label', longDate(dt) + (taken ? ', unavailable' : past ? ', past' : limited ? ', shows unavailable, send an inquiry to check' : ', open'));
+      b.setAttribute('aria-label', longDate(dt) + (taken ? ', booked' : past ? ', past' : limited ? ', limited, send an inquiry to check' : ', open'));
       if (k === selected) b.setAttribute('aria-pressed', 'true');
       (function (kk, date, lim) {
         b.addEventListener('click', function () {
           selected = kk;
           selectedDate = date;
           document.getElementById('pickedTitle').textContent = longDate(date);
-          var an = document.getElementById('availNote'); var at = lim ? 'This date shows as unavailable, but we may still have a creator open. Send an inquiry and we will reply to confirm.' : ''; an.textContent = at; an.hidden = !at; buildCreators(kk);
+          var an = document.getElementById('availNote'); var at = lim ? 'This date is limited. We may still have a creator open. Send an inquiry and we will reply to confirm.' : ''; an.textContent = at; an.hidden = !at; buildCreators(kk);
           reqForm.hidden = false;
           reqResult.hidden = true;
           document.getElementById('reqDone').hidden = true;
@@ -762,7 +764,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (j.note) { document.getElementById('calNote').textContent = j.note; }
     if (j.updated) {
       CAL_UPDATED = j.updated;
-      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Open dates are not held until we confirm by reply. A date that shows unavailable may still have room, so send an inquiry and we will check. Dates close once every creator is booked and the retainer is received.';
+      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. No date is held until we confirm by reply. Limited dates may still have room, so send an inquiry and we will check. A date is booked once the retainer is received.';
     }
     render();
   }).catch(function () {});
