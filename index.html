@@ -73,6 +73,10 @@ nav.main a.cta:hover { filter: brightness(1.1); color: var(--accent-fg); }
 .btn.ghost { background: transparent; color: var(--fg); border-color: var(--fg); }
 .btn.ghost:hover { background: var(--surface); filter: none; }
 
+.quotes { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.quote { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 32px 28px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.quote blockquote { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.35; overflow-wrap: anywhere; }
+.quote figcaption { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 section.block { padding-block: 96px; scroll-margin-top: 72px; }
 section.block + section.block { border-top: 1px solid var(--line); }
 .section-head { display: grid; gap: 14px; max-width: 640px; margin-bottom: 52px; }
@@ -232,6 +236,25 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           <a class="btn" href="#home" data-go="booking">Check open dates</a>
           <a class="btn ghost" href="#home" data-go="services">See packages</a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="testimonials">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Testimonials</p>
+        <h2>kind words</h2>
+      </div>
+      <div class="quotes">
+        <figure class="quote">
+          <blockquote>“Our content creator!!! To think I almost didn’t have a videographer/content creator, makes me even more thankful that I DID!!!! Taylor was there every step of the way on my wedding day, capturing truly every single special moment. I am so thankful for these short, but beautiful clips of our wedding day to cherish forever.”</blockquote>
+          <figcaption>The Sims</figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>“We just finished looking through the gallery and we absolutely LOVE IT!!! Y’all did such an amazing job and I can’t express how grateful we are! You guys did amazing and we can’t wait to see the rest of the reels!🤍”</blockquote>
+          <figcaption>The Moores</figcaption>
+        </figure>
       </div>
     </div>
   </section>
