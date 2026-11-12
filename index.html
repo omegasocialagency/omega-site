@@ -327,13 +327,16 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           <p>Check the calendar, choose an open day and send us your request. Dates fill up, so reach out as soon as you have one.</p>
         </div>
         <ol class="steps">
-          <li><div><b>Pick an open date</b><span>Booked days are crossed out and cannot be chosen.</span></div></li>
+          <li><div><b>Pick an open date</b><span>Unavailable days are crossed out and cannot be chosen.</span></div></li>
           <li><div><b>Tell us about your day</b><span>Your name, email, venue and the service you want.</span></div></li>
-          <li><div><b>Send us your request</b><span>It opens in your email, already addressed to us. You can also message us on Instagram.</span></div></li>
+          <li><div><b>Send us your request</b><span>Your request goes straight to us. You can also message us on Instagram.</span></div></li>
           <li><div><b>We confirm your date</b><span>We reply to lock in your date. After your wedding or event, you get raw content within 24 hours and edited content within 72.</span></div></li>
         </ol>
       </div>
       <div class="cal-card">
+        <div class="field" style="margin-bottom:16px"><label for="pkg">Which package are you interested in?</label>
+          <select id="pkg"><option value="">Not sure yet</option><option value="gallery">The Gallery, $800</option><option value="curated">The Curated, $1,000</option><option value="heirloom">The Heirloom, $1,200 (two creators)</option><option value="quote">Event or brand quote</option></select>
+          <p class="muted" id="pkgNote" hidden></p></div>
         <div class="cal-head">
           <button type="button" class="cal-nav" id="calPrev" aria-label="Previous month">←</button>
           <h3 id="calMonth" aria-live="polite"></h3>
@@ -341,7 +344,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         </div>
         <div class="cal-dow" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
         <div class="cal-grid" id="cal" role="group" aria-label="Open and booked dates"></div>
-        <div class="legend"><span><i class="sw"></i>Open</span><span><i class="sw taken"></i>Booked</span><span><i class="sw pick"></i>Your pick</span></div>
+        <div class="legend"><span><i class="sw"></i>Open</span><span><i class="sw taken"></i>Unavailable</span><span><i class="sw pick"></i>Your pick</span></div>
         <p class="placeholder" id="calUpdated"></p>
         <p class="muted" id="calNote"></p>
 
@@ -349,6 +352,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           <span class="eyebrow">Event date</span>
           <h3 id="pickedTitle"></h3>
           <p class="muted" id="availNote" hidden></p>
+          <p class="muted" id="pkgEcho" hidden></p>
           <p class="muted">Thank you for your interest. Please share as much detail as you can so we understand your needs and can confirm availability. We will be in touch within 24 to 48 hours with next steps.</p>
           <div class="row2">
             <div class="field"><label for="r-name">Full name *</label><input type="text" id="r-name" autocomplete="name"></div>
@@ -358,6 +362,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
             <div class="field"><label for="r-ig">Instagram handle</label><input type="text" id="r-ig" autocomplete="off"></div>
             <div class="field"><label for="r-venue">Event venue *</label><input type="text" id="r-venue"></div>
           </div>
+          <div class="field"><label for="r-creator">Preferred creator</label><select id="r-creator"></select><p class="muted" id="creatorNote"></p></div>
           <fieldset>
             <legend>What service are you inquiring about? *</legend>
             <div class="checks">
@@ -630,6 +635,12 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   var BOOKED = {};
   var CREATORS = 2;
   var NAMES = [];
+  var CONTRACT = {};
+  var PKG = '';
+  var PKG_LABELS = { gallery: 'The Gallery', curated: 'The Curated', heirloom: 'The Heirloom', quote: 'Event or brand quote' };
+  function need() { return PKG === 'heirloom' ? 2 : 1; }
+  function freeNames(k) { var v = BOOKED[k]; v = Array.isArray(v) ? v : []; return NAMES.filter(function (n) { return v.indexOf(n) < 0; }); }
+  function avail(k) { var base = NAMES.length ? freeNames(k).length : CREATORS - cnt(k); return base + (CONTRACT[k] || 0); }
   function cnt(k) { var v = BOOKED[k]; return Array.isArray(v) ? v.length : (v || 0); }
   function availText(k) {
     var v = BOOKED[k];
@@ -660,7 +671,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   function keyOf(dt) { return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); }
   function longDate(dt) { return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
 
-  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Booked dates are removed by Omega.';
+  document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Dates close once every creator is booked and the retainer is received.';
 
   function render() {
     monthLabel.textContent = view.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -674,21 +685,21 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       var dt = new Date(view.getFullYear(), view.getMonth(), d);
       var k = keyOf(dt);
       var past = dt < today;
-      var left = CREATORS - cnt(k);
-      var taken = left <= 0;
+      var left = avail(k);
+      var taken = left < need();
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'cal-day' + (taken ? ' taken' : '') + (past ? ' past' : '') + (k === selected ? ' pick' : '');
       b.textContent = d;
       b.disabled = past || taken;
-      b.setAttribute('aria-label', longDate(dt) + (taken ? ', booked' : past ? ', past' : left < CREATORS ? ', open, one spot left' : ', open'));
+      b.setAttribute('aria-label', longDate(dt) + (taken ? ', unavailable' : past ? ', past' : ', open'));
       if (k === selected) b.setAttribute('aria-pressed', 'true');
       (function (kk, date) {
         b.addEventListener('click', function () {
           selected = kk;
           selectedDate = date;
           document.getElementById('pickedTitle').textContent = longDate(date);
-          var an = document.getElementById('availNote'); var at = availText(kk); an.textContent = at; an.hidden = !at;
+          var an = document.getElementById('availNote'); var at = availText(kk); an.textContent = at; an.hidden = !at; buildCreators(kk);
           reqForm.hidden = false;
           reqResult.hidden = true;
           document.getElementById('reqDone').hidden = true;
@@ -699,6 +710,25 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       calEl.appendChild(b);
     }
   }
+  function buildCreators(k) {
+    var sel = document.getElementById('r-creator');
+    sel.textContent = '';
+    var o = document.createElement('option'); o.value = ''; o.textContent = 'No preference, match me with the best fit'; sel.appendChild(o);
+    if (NAMES.length) freeNames(k).forEach(function (n) { var x = document.createElement('option'); x.value = n; x.textContent = n; sel.appendChild(x); });
+    document.getElementById('creatorNote').textContent = (PKG === 'heirloom' ? 'The Heirloom includes two creators on your day. ' : '') + 'Choosing a creator is a request, not a guarantee. We assign creators based on availability and fit.';
+    var pe = document.getElementById('pkgEcho');
+    pe.textContent = PKG ? 'Package: ' + PKG_LABELS[PKG] + (PKG === 'heirloom' ? ', two creators included' : '') : '';
+    pe.hidden = !PKG;
+  }
+  document.getElementById('pkg').addEventListener('change', function () {
+    PKG = this.value;
+    var pn = document.getElementById('pkgNote');
+    pn.textContent = PKG === 'heirloom' ? 'The Heirloom includes two creators on your day, so only dates with two creators available can be requested.' : '';
+    pn.hidden = !pn.textContent;
+    if (selected && avail(selected) < need()) { selected = null; selectedDate = null; reqForm.hidden = true; }
+    render();
+    if (selected) buildCreators(selected);
+  });
   prevBtn.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); });
   nextBtn.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); });
   render();
@@ -710,6 +740,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (!j) return;
     if (Array.isArray(j.creators)) { NAMES = j.creators; CREATORS = NAMES.length; }
     else if (j.creators) CREATORS = j.creators;
+    if (j.contractors) CONTRACT = j.contractors;
     if (Array.isArray(j.booked)) { j.booked.forEach(function (k) { BOOKED[k] = CREATORS; }); }
     else if (j.booked) BOOKED = j.booked;
     if (j.openThrough) {
@@ -721,7 +752,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (j.note) { document.getElementById('calNote').textContent = j.note; }
     if (j.updated) {
       CAL_UPDATED = j.updated;
-      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Booked dates are removed by Omega.';
+      document.getElementById('calUpdated').textContent = 'Calendar last updated ' + CAL_UPDATED + '. Dates close once every creator is booked and the retainer is received.';
     }
     render();
   }).catch(function () {});
@@ -777,6 +808,8 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         service: svcs.join(', '),
         event_date: dateText,
         event_venue: venue,
+        package: PKG ? PKG_LABELS[PKG] + (PKG === 'heirloom' ? ' (two creators)' : '') : 'not selected',
+        preferred_creator: document.getElementById('r-creator').value || 'No preference',
         message: notes || 'none',
         _subject: 'Content inquiry: ' + dateText
       })
