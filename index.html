@@ -744,6 +744,15 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     if (j.contractors) CONTRACT = j.contractors;
     if (Array.isArray(j.booked)) { j.booked.forEach(function (k) { BOOKED[k] = CREATORS; }); }
     else if (j.booked) BOOKED = j.booked;
+    if (j.away) {
+      Object.keys(j.away).forEach(function (n) {
+        j.away[n].forEach(function (k) {
+          var v = Array.isArray(BOOKED[k]) ? BOOKED[k].slice() : [];
+          if (v.indexOf(n) < 0) v.push(n);
+          BOOKED[k] = v;
+        });
+      });
+    }
     if (j.openThrough) {
       var pp = j.openThrough.split('-');
       var lim = new Date(+pp[0], +pp[1] - 1, 1);
