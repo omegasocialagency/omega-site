@@ -73,10 +73,18 @@ nav.main a.cta:hover { filter: brightness(1.1); color: var(--accent-fg); }
 .btn.ghost { background: transparent; color: var(--fg); border-color: var(--fg); }
 .btn.ghost:hover { background: var(--surface); filter: none; }
 
-.quotes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
-.quote { margin: 0; background: rgba(60, 33, 48, 0.72); border: 1px solid rgba(60, 33, 48, 0.35); border-radius: 6px; padding: 22px 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; color: var(--on-plum); }
-.quote blockquote { margin: 0; font-family: var(--font-display); font-size: 18px; line-height: 1.4; color: var(--on-plum); overflow-wrap: anywhere; }
+.quotes { display: grid; gap: 16px; max-width: 560px; margin-inline: auto; }
+.quote { margin: 0; background: rgba(60, 33, 48, 0.72); border: 1px solid rgba(60, 33, 48, 0.35); border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; color: var(--on-plum); }
+.quote blockquote { margin: 0; font-family: var(--font-display); font-size: 16px; line-height: 1.4; color: var(--on-plum); overflow-wrap: anywhere; }
 .quote figcaption { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pink); }
+.quotes.js { gap: 0; }
+.quotes.js .quote { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity 0.7s ease, visibility 0.7s; }
+.quotes.js .quote.on { opacity: 1; visibility: visible; }
+.qdots { display: none; justify-content: center; gap: 10px; margin-top: 14px; }
+.quotes.js + .qdots { display: flex; }
+.qdots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 1px solid var(--accent); background: transparent; cursor: pointer; }
+.qdots button[aria-current="true"] { background: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .quotes.js .quote { transition: none; } }
 section.block { padding-block: 96px; scroll-margin-top: 72px; }
 section.block + section.block { border-top: 1px solid var(--line); }
 .section-head { display: grid; gap: 14px; max-width: 640px; margin-bottom: 52px; }
@@ -240,12 +248,8 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
     </div>
   </section>
 
-  <section class="block" id="testimonials">
+  <section class="block" id="testimonials" style="padding-block: 56px;">
     <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Testimonials</p>
-        <h2>kind words</h2>
-      </div>
       <div class="quotes">
         <figure class="quote">
           <blockquote>“Our content creator!!! To think I almost didn’t have a videographer/content creator, makes me even more thankful that I DID!!!! Taylor was there every step of the way on my wedding day, capturing truly every single special moment. I am so thankful for these short, but beautiful clips of our wedding day to cherish forever.”</blockquote>
@@ -256,6 +260,39 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           <figcaption>The Moores</figcaption>
         </figure>
       </div>
+      <div class="qdots" id="qdots" aria-label="Choose a testimonial"></div>
+      <script>
+      (function () {
+        var box = document.querySelector('#testimonials .quotes');
+        var cards = box ? box.querySelectorAll('.quote') : [];
+        if (cards.length < 2) return;
+        var dots = document.getElementById('qdots');
+        var i = 0, timer = null, paused = false;
+        var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        box.classList.add('js');
+        cards[0].classList.add('on');
+        for (var n = 0; n < cards.length; n++) {
+          (function (k) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('aria-label', 'Show testimonial ' + (k + 1));
+            b.addEventListener('click', function () { show(k); restart(); });
+            dots.appendChild(b);
+          })(n);
+        }
+        function show(k) {
+          i = k;
+          for (var m = 0; m < cards.length; m++) {
+            cards[m].classList.toggle('on', m === k);
+            dots.children[m].setAttribute('aria-current', m === k ? 'true' : 'false');
+          }
+        }
+        function restart() { clearInterval(timer); if (!still) timer = setInterval(function () { if (!paused) show((i + 1) % cards.length); }, 7000); }
+        box.addEventListener('mouseenter', function () { paused = true; });
+        box.addEventListener('mouseleave', function () { paused = false; });
+        show(0); restart();
+      })();
+      </script>
     </div>
   </section>
 
