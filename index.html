@@ -348,6 +348,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
         <form class="req" id="reqForm" hidden novalidate>
           <span class="eyebrow">Event date</span>
           <h3 id="pickedTitle"></h3>
+          <p class="muted" id="availNote" hidden></p>
           <p class="muted">Thank you for your interest. Please share as much detail as you can so we understand your needs and can confirm availability. We will be in touch within 24 to 48 hours with next steps.</p>
           <div class="row2">
             <div class="field"><label for="r-name">Full name *</label><input type="text" id="r-name" autocomplete="name"></div>
@@ -628,6 +629,14 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   // ---- Booking calendar. Omega's booked dates live here and are kept up to date by Claude on request. ----
   var BOOKED = {};
   var CREATORS = 2;
+  var NAMES = [];
+  function cnt(k) { var v = BOOKED[k]; return Array.isArray(v) ? v.length : (v || 0); }
+  function availText(k) {
+    var v = BOOKED[k];
+    if (!NAMES.length || !Array.isArray(v) || !v.length) return '';
+    var free = NAMES.filter(function (n) { return v.indexOf(n) < 0; });
+    return v.join(' and ') + (v.length > 1 ? ' are' : ' is') + ' booked. ' + free.join(' and ') + (free.length > 1 ? ' are' : ' is') + ' available.';
+  }
   var CAL_UPDATED = 'November 11, 2026';
 
   var calEl = document.getElementById('cal');
@@ -665,7 +674,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
       var dt = new Date(view.getFullYear(), view.getMonth(), d);
       var k = keyOf(dt);
       var past = dt < today;
-      var left = CREATORS - (BOOKED[k] || 0);
+      var left = CREATORS - cnt(k);
       var taken = left <= 0;
       var b = document.createElement('button');
       b.type = 'button';
@@ -679,6 +688,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
           selected = kk;
           selectedDate = date;
           document.getElementById('pickedTitle').textContent = longDate(date);
+          var an = document.getElementById('availNote'); var at = availText(kk); an.textContent = at; an.hidden = !at;
           reqForm.hidden = false;
           reqResult.hidden = true;
           document.getElementById('reqDone').hidden = true;
@@ -698,7 +708,8 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
 
   fetch('booked.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
     if (!j) return;
-    if (j.creators) CREATORS = j.creators;
+    if (Array.isArray(j.creators)) { NAMES = j.creators; CREATORS = NAMES.length; }
+    else if (j.creators) CREATORS = j.creators;
     if (Array.isArray(j.booked)) { j.booked.forEach(function (k) { BOOKED[k] = CREATORS; }); }
     else if (j.booked) BOOKED = j.booked;
     if (j.openThrough) {
